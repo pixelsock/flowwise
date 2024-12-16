@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: HubSpot Performance Insights API
+  description: >
+    A comprehensive API integrating HubSpot's endpoints for performance tracking, engagement,
+    marketing events, CRM insights, and pipeline management.
+  version: 1.0.0
+servers:
+  - url: https://api.hubspot.com
+    description: HubSpot API Server
+
+tags:
+  - name: Contacts
+    description: Operations for managing contacts.
+  - name: Calls
+    description: Operations for managing call logs.
+  - name: Communications
+    description: Operations for managing communications.
+  - name: Pipelines
+    description: Operations for managing pipelines and stages.
+  - name: Conversations
+    description: Operations for managing conversations, threads, and messages.
+  - name: Marketing
+    description: Operations for managing marketing emails, forms, and events.
+  - name: Audit Logs
+    description: Operations for accessing account audit logs.
+
+paths:
+  /crm/v3/objects/contacts:
+    get:
+      tags: [Contacts]
+      summary: List contacts
+      description: Retrieve a paginated list of contact records with optional filters.
+      operationId: getContactsPage
+      parameters:
+        - name: archived
+          in: query
+          description: Whether to include archived records.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          description: Maximum number of results to return.
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: after
+          in: query
+          description: Paging cursor token for pagination.
+          required: false
+          schema:
+            type: string
+        - name: properties
+          in: query
+          description: Comma-separated list of properties to include in the response.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+      responses:
+        '200':
+          description: List of contact records, including their properties and associated objects. The response includes pagination information for retrieving subsequent pages.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponseSimplePublicObjectWithAssociationsForwardPaging'
+        default:
+          $ref: '#/components/responses/Error'
+
+    post:
+      tags: [Contacts]
+      summary: Create a new contact
+      description: Add a new contact to your HubSpot CRM.
+      operationId: postCreateContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactInput'
+      responses:
+        '201':
+          description: Contact created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactOutput'
+        default:
+          $ref: '#/components/responses/Error'
+
+components:
+  schemas:
+    ContactInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          description: The email address of the contact.
+        firstName:
+          type: string
+          description: The first name of the contact.
+        lastName:
+          type: string
+          description: The last name of the contact.
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional custom properties for the contact.
+
+    ContactOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the contact.
+        email:
+          type: string
+          description: The email address of the contact.
+        firstName:
+          type: string
+          description: The first name of the contact.
+        lastName:
+          type: string
+          description: The last name of the contact.
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional properties for the contact.
+
+    CollectionResponseSimplePublicObjectWithAssociationsForwardPaging:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimplePublicObjectWithAssociations'
+        paging:
+          $ref: '#/components/schemas/ForwardPaging'
+
+    ForwardPaging:
+      type: object
+      properties:
+        next:
+          type: object
+          properties:
+            after:
+              type: string
+              description: Token for fetching the next page of results.
+            link:
+              type: string
+              format: uri
+              description: URL for the next page.
+
+    SimplePublicObjectWithAssociations:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the contact.
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Object properties and their values.
+        associations:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Associated object types and their IDs.
+
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              correlationId:
+                type: string
